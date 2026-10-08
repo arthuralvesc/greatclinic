@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator
 
 import httpx
 import pytest
+from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from app.api.deps import get_session
@@ -51,17 +52,22 @@ def settings(database_url: str) -> Settings:
 
 
 @pytest.fixture
-async def client(engine: AsyncEngine, settings: Settings) -> AsyncIterator[httpx.AsyncClient]:
-    app = create_app(settings)
+async def app(engine: AsyncEngine, settings: Settings) -> AsyncIterator[FastAPI]:
+    application = create_app(settings)
     async with rolled_back_session(engine) as session:
 
         async def override_session() -> AsyncIterator[AsyncSession]:
             yield session
 
-        app.dependency_overrides[get_session] = override_session
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app),
-            base_url="http://test",
-            headers={"X-API-Key": API_KEY},
-        ) as http_client:
-            yield http_client
+        application.dependency_overrides[get_session] = override_session
+        yield application
+
+
+@pytest.fixture
+async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+        headers={"X-API-Key": API_KEY},
+    ) as http_client:
+        yield http_client

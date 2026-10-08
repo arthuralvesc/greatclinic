@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from app.api.deps import get_lookup_patient_by_phone, get_register_patient
+from app.api.v1 import API_V1_PREFIX
 from app.api.v1.schemas.patients import (
     LookupPatientResponse,
     PatientResponse,
@@ -12,7 +13,9 @@ from app.domain.entities.patient import Patient
 from app.use_cases.patients.lookup_patient_by_phone import LookupPatientByPhone
 from app.use_cases.patients.register_patient import RegisterPatient
 
-router = APIRouter(tags=["patients"])
+# The prefix is declared on the router, not in include_router, so the matched route's
+# path is the full template (/v1/...), which is what the access log records.
+router = APIRouter(prefix=API_V1_PREFIX, tags=["patients"])
 
 
 @router.get(

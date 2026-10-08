@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.api.v1.routers.patients import router as patients_router
+from app.core.access_log import AccessLogMiddleware, configure_access_logging
 from app.core.config import Settings
 from app.core.errors import register_exception_handlers
 from app.core.request_id import RequestIdMiddleware
@@ -23,7 +24,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="GreatClinic", lifespan=lifespan)
     app.state.settings = settings
     app.state.session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    configure_access_logging()
+    # The last middleware added is the outermost: request id must wrap the access log.
+    app.add_middleware(AccessLogMiddleware)
     app.add_middleware(RequestIdMiddleware)
     register_exception_handlers(app)
-    app.include_router(patients_router, prefix="/v1", dependencies=[Depends(verify_api_key)])
+    app.include_router(patients_router, dependencies=[Depends(verify_api_key)])
     return app

@@ -174,7 +174,7 @@ Type path params as `uuid.UUID` so FastAPI validates them.
 - `X-Request-ID` is accepted if present (short validated string), otherwise generated as a UUID. It is echoed in the response header and in the error body's `requestId`.
 - Override FastAPI's default `RequestValidationError` handler so validation errors use the same shape (`error: "VALIDATION_ERROR"`).
 - `error` is a stable, UPPER_SNAKE_CASE code the agent can branch on. `message` is short and suitable to be read aloud.
-- Status codes: `400` validation, `401` missing/invalid API key, `404` resource not found, `409` slot taken, patient time conflict, or duplicate phone/email, `422` business-rule violation (past date, insufficient notice, invalid slot, beyond horizon, booking limit, cancelling an already cancelled/completed or past appointment).
+- Status codes: `400` validation, `401` missing/invalid API key, `404` resource not found, `409` slot taken, patient time conflict, or duplicate phone/email, `422` business-rule violation (past date, insufficient notice, invalid slot, beyond horizon, booking limit, cancelling an already cancelled/completed or past appointment), `500` unexpected failure (`INTERNAL_ERROR`, same body shape, never includes exception text).
 - Error codes:
 
   | Status | Codes |
@@ -184,6 +184,7 @@ Type path params as `uuid.UUID` so FastAPI validates them.
   | 404 | `PATIENT_NOT_FOUND`, `DOCTOR_NOT_FOUND`, `APPOINTMENT_NOT_FOUND` |
   | 409 | `SLOT_UNAVAILABLE`, `PATIENT_TIME_CONFLICT`, `PHONE_ALREADY_REGISTERED`, `EMAIL_ALREADY_REGISTERED` |
   | 422 | `INVALID_SLOT`, `BOOKING_NOTICE_TOO_SHORT`, `BOOKING_IN_PAST`, `BEYOND_BOOKING_HORIZON`, `BOOKING_LIMIT_REACHED`, `APPOINTMENT_IN_PAST`, `APPOINTMENT_NOT_CANCELLABLE` |
+  | 500 | `INTERNAL_ERROR` |
 
   Registration validation (malformed phone, future or >120-year `birthDate`, blank name) is `VALIDATION_ERROR`. If phone and email both clash, report the phone first.
 - Domain errors are plain exception classes in the domain layer; only the API layer maps them to HTTP.
