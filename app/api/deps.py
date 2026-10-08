@@ -1,0 +1,32 @@
+from collections.abc import AsyncIterator
+from typing import Annotated
+
+from fastapi import Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from app.core.clock import SystemClock
+from app.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork
+from app.infrastructure.repositories.patient_repository import SqlAlchemyPatientRepository
+from app.use_cases.patients.lookup_patient_by_phone import LookupPatientByPhone
+from app.use_cases.patients.register_patient import RegisterPatient
+
+
+async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
+    factory: async_sessionmaker[AsyncSession] = request.app.state.session_factory
+    async with factory() as session:
+        yield session
+
+
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+
+def get_register_patient(session: SessionDep) -> RegisterPatient:
+    return RegisterPatient(
+        SqlAlchemyPatientRepository(session),
+        SystemClock(),
+        SqlAlchemyUnitOfWork(session),
+    )
+
+
+def get_lookup_patient_by_phone(session: SessionDep) -> LookupPatientByPhone:
+    return LookupPatientByPhone(SqlAlchemyPatientRepository(session))
