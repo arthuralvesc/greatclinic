@@ -33,3 +33,16 @@ async def test_registered_patient_is_created_and_then_found_by_phone(
 
     assert found.status_code == 200
     assert found.json() == {"exists": True, "patient": body}
+
+
+async def test_lookup_of_an_unparseable_phone_returns_400_invalid_phone(
+    client: httpx.AsyncClient,
+) -> None:
+    response = await client.get("/v1/patients/lookup", params={"phone": "uh, eleven nine"})
+
+    assert response.status_code == 400
+    body = response.json()
+    assert body["statusCode"] == 400
+    assert body["error"] == "INVALID_PHONE"
+    assert body["message"]
+    assert body["requestId"]
