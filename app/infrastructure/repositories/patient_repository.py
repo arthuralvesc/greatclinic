@@ -1,9 +1,14 @@
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.patient import Patient
+from app.domain.errors import EmailAlreadyRegisteredError, PhoneAlreadyRegisteredError
 from app.domain.value_objects.phone import Phone
 from app.infrastructure.db.models import PatientModel
+
+PHONE_CONSTRAINT = "patients_phone_key"
+EMAIL_CONSTRAINT = "patients_email_key"
 
 
 def _to_entity(row: PatientModel) -> Patient:
@@ -30,7 +35,14 @@ class SqlAlchemyPatientRepository:
                 birth_date=patient.birth_date,
             )
         )
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except IntegrityError as exc:
+            if PHONE_CONSTRAINT in str(exc.orig):
+                raise PhoneAlreadyRegisteredError() from exc
+            if EMAIL_CONSTRAINT in str(exc.orig):
+                raise EmailAlreadyRegisteredError() from exc
+            raise
 
     async def get_by_phone(self, phone: Phone) -> Patient | None:
         row = await self._session.scalar(
