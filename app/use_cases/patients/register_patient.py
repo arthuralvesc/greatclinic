@@ -8,16 +8,17 @@ from app.domain.errors import (
     InvalidPatientError,
     PhoneAlreadyRegisteredError,
 )
-from app.domain.repositories import PatientRepository
+from app.domain.repositories import PatientRepository, UnitOfWork
 from app.domain.value_objects.phone import Phone
 
 MAX_AGE_YEARS = 120
 
 
 class RegisterPatient:
-    def __init__(self, patients: PatientRepository, clock: Clock) -> None:
+    def __init__(self, patients: PatientRepository, clock: Clock, uow: UnitOfWork) -> None:
         self._patients = patients
         self._clock = clock
+        self._uow = uow
 
     async def execute(self, *, name: str, phone: str, email: str, birth_date: date) -> Patient:
         if not name.strip():
@@ -41,4 +42,5 @@ class RegisterPatient:
             birth_date=birth_date,
         )
         await self._patients.add(patient)
+        await self._uow.commit()
         return patient

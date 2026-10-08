@@ -4,6 +4,12 @@ from app.domain.entities.patient import Patient
 from app.domain.value_objects.phone import Phone
 
 
+class UnitOfWork(Protocol):
+    """Owns the transaction. Use cases commit through it; repositories never commit."""
+
+    async def commit(self) -> None: ...
+
+
 class PatientRepository(Protocol):
     async def add(self, patient: Patient) -> None: ...
 

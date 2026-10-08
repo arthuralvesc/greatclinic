@@ -12,6 +12,13 @@ class PatientResponse(CamelModel):
     birth_date: date
 
 
+class RegisterPatientRequest(CamelModel):
+    name: str
+    phone: str
+    email: str
+    birth_date: date
+
+
 class LookupPatientResponse(CamelModel):
     exists: bool
     patient: PatientResponse | None = None

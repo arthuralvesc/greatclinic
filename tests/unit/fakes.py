@@ -24,3 +24,11 @@ class FixedClock:
 
     def now(self) -> datetime:
         return self._now
+
+
+class FakeUnitOfWork:
+    def __init__(self) -> None:
+        self.commits = 0
+
+    async def commit(self) -> None:
+        self.commits += 1
