@@ -4,8 +4,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.core.security import UnauthorizedError
 from app.domain.errors import (
-    DomainError,
     EmailAlreadyRegisteredError,
     InvalidPatientError,
     InvalidPhoneError,
@@ -13,7 +13,8 @@ from app.domain.errors import (
 )
 
 # Domain error class -> (HTTP status, stable error code, message suitable to be read aloud).
-_HTTP_ERRORS: dict[type[DomainError], tuple[int, str, str]] = {
+_HTTP_ERRORS: dict[type[Exception], tuple[int, str, str]] = {
+    UnauthorizedError: (401, "UNAUTHORIZED", "A valid API key is required."),
     InvalidPhoneError: (400, "INVALID_PHONE", "That phone number is not valid."),
     InvalidPatientError: (400, "VALIDATION_ERROR", "The patient details are not valid."),
     PhoneAlreadyRegisteredError: (
@@ -39,7 +40,7 @@ def error_body(status_code: int, error: str, message: str, request_id: str) -> d
 
 
 async def _handle_domain_error(request: Request, exc: Exception) -> JSONResponse:
-    status_code, code, message = _HTTP_ERRORS[type(exc)]  # type: ignore[index]
+    status_code, code, message = _HTTP_ERRORS[type(exc)]
     return JSONResponse(
         error_body(status_code, code, message, str(uuid4())), status_code=status_code
     )
