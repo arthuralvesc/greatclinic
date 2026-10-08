@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -12,7 +13,9 @@ from app.infrastructure.db.models import Base
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", Settings().database_url)
+# Migrations only need the database URL. Reading the environment first avoids requiring
+# every application setting (and a .env file) just to run `alembic upgrade head`.
+config.set_main_option("sqlalchemy.url", os.environ.get("DATABASE_URL") or Settings().database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
