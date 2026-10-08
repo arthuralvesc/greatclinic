@@ -87,3 +87,33 @@ async def test_registering_an_email_that_already_exists_returns_409(
 
     assert response.status_code == 409
     assert response.json()["error"] == "EMAIL_ALREADY_REGISTERED"
+
+
+async def test_registering_a_blank_name_returns_400_validation_error(
+    client: httpx.AsyncClient,
+) -> None:
+    response = await client.post(
+        "/v1/patients",
+        json={
+            "name": "   ",
+            "phone": "(11) 99999-8888",
+            "email": "maria@example.com",
+            "birthDate": "1990-05-17",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"] == "VALIDATION_ERROR"
+
+
+async def test_a_body_missing_required_fields_returns_400_validation_error(
+    client: httpx.AsyncClient,
+) -> None:
+    response = await client.post("/v1/patients", json={"name": "Maria Silva"})
+
+    assert response.status_code == 400
+    body = response.json()
+    assert body["statusCode"] == 400
+    assert body["error"] == "VALIDATION_ERROR"
+    assert body["message"]
+    assert body["requestId"]

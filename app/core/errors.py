@@ -1,11 +1,13 @@
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.domain.errors import (
     DomainError,
     EmailAlreadyRegisteredError,
+    InvalidPatientError,
     InvalidPhoneError,
     PhoneAlreadyRegisteredError,
 )
@@ -13,6 +15,7 @@ from app.domain.errors import (
 # Domain error class -> (HTTP status, stable error code, message suitable to be read aloud).
 _HTTP_ERRORS: dict[type[DomainError], tuple[int, str, str]] = {
     InvalidPhoneError: (400, "INVALID_PHONE", "That phone number is not valid."),
+    InvalidPatientError: (400, "VALIDATION_ERROR", "The patient details are not valid."),
     PhoneAlreadyRegisteredError: (
         409,
         "PHONE_ALREADY_REGISTERED",
@@ -42,6 +45,13 @@ async def _handle_domain_error(request: Request, exc: Exception) -> JSONResponse
     )
 
 
+async def _handle_validation_error(request: Request, exc: Exception) -> JSONResponse:
+    # Field details are deliberately left out: they can echo patient data back.
+    body = error_body(400, "VALIDATION_ERROR", "The request is not valid.", str(uuid4()))
+    return JSONResponse(body, status_code=400)
+
+
 def register_exception_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(RequestValidationError, _handle_validation_error)
     for error_type in _HTTP_ERRORS:
         app.add_exception_handler(error_type, _handle_domain_error)
