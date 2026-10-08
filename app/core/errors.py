@@ -1,5 +1,3 @@
-from uuid import uuid4
-
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -42,13 +40,15 @@ def error_body(status_code: int, error: str, message: str, request_id: str) -> d
 async def _handle_domain_error(request: Request, exc: Exception) -> JSONResponse:
     status_code, code, message = _HTTP_ERRORS[type(exc)]
     return JSONResponse(
-        error_body(status_code, code, message, str(uuid4())), status_code=status_code
+        error_body(status_code, code, message, request.state.request_id), status_code=status_code
     )
 
 
 async def _handle_validation_error(request: Request, exc: Exception) -> JSONResponse:
     # Field details are deliberately left out: they can echo patient data back.
-    body = error_body(400, "VALIDATION_ERROR", "The request is not valid.", str(uuid4()))
+    body = error_body(
+        400, "VALIDATION_ERROR", "The request is not valid.", request.state.request_id
+    )
     return JSONResponse(body, status_code=400)
 
 
