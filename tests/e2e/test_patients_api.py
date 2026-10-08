@@ -46,3 +46,44 @@ async def test_lookup_of_an_unparseable_phone_returns_400_invalid_phone(
     assert body["error"] == "INVALID_PHONE"
     assert body["message"]
     assert body["requestId"]
+
+
+async def test_registering_a_phone_that_already_exists_returns_409(
+    client: httpx.AsyncClient,
+) -> None:
+    first = {
+        "name": "Maria Silva",
+        "phone": "(11) 99999-8888",
+        "email": "maria@example.com",
+        "birthDate": "1990-05-17",
+    }
+    second = {
+        **first,
+        "name": "Joana Souza",
+        "phone": "+55 11 99999-8888",
+        "email": "j@example.com",
+    }
+    assert (await client.post("/v1/patients", json=first)).status_code == 201
+
+    response = await client.post("/v1/patients", json=second)
+
+    assert response.status_code == 409
+    assert response.json()["error"] == "PHONE_ALREADY_REGISTERED"
+
+
+async def test_registering_an_email_that_already_exists_returns_409(
+    client: httpx.AsyncClient,
+) -> None:
+    first = {
+        "name": "Maria Silva",
+        "phone": "(11) 99999-8888",
+        "email": "maria@example.com",
+        "birthDate": "1990-05-17",
+    }
+    second = {**first, "name": "Joana Souza", "phone": "(21) 98888-7777"}
+    assert (await client.post("/v1/patients", json=first)).status_code == 201
+
+    response = await client.post("/v1/patients", json=second)
+
+    assert response.status_code == 409
+    assert response.json()["error"] == "EMAIL_ALREADY_REGISTERED"

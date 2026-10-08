@@ -3,11 +3,26 @@ from uuid import uuid4
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.domain.errors import DomainError, InvalidPhoneError
+from app.domain.errors import (
+    DomainError,
+    EmailAlreadyRegisteredError,
+    InvalidPhoneError,
+    PhoneAlreadyRegisteredError,
+)
 
 # Domain error class -> (HTTP status, stable error code, message suitable to be read aloud).
 _HTTP_ERRORS: dict[type[DomainError], tuple[int, str, str]] = {
     InvalidPhoneError: (400, "INVALID_PHONE", "That phone number is not valid."),
+    PhoneAlreadyRegisteredError: (
+        409,
+        "PHONE_ALREADY_REGISTERED",
+        "A patient with this phone number is already registered.",
+    ),
+    EmailAlreadyRegisteredError: (
+        409,
+        "EMAIL_ALREADY_REGISTERED",
+        "A patient with this email is already registered.",
+    ),
 }
 
 
